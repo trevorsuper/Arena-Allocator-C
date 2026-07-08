@@ -1,9 +1,6 @@
 #ifndef MARENA
 #define MARENA
 
-//#define _DEFAULT_SOURCE
-#include <unistd.h>
-#include <sys/mman.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -128,11 +125,47 @@ void arena_pop_to(marena* arena, u64 pos)
 	arena_pop(arena, size);
 }
 
-
 void arena_clear(marena* arena)
 {
 	arena_pop_to(arena, ARENA_BASE_POS);
 }
+
+#if defined(_WIN32)
+
+#include <windows.h>
+
+u32 plat_get_pagesize(void)
+{
+	SYSTEM_INFO sysinfo = { 0 };
+	GetSystemInfo(&sysinfo);
+	return sysinfo.dwPageSize;
+}
+
+void *mem_reserve(u64 size)
+{
+	return VirtualAlloc(NULL, size, MEM_RESERVE, PAGE_READWRITE);
+}
+
+b32 mem_commit(void *ptr, u64 size)
+{
+	void *ret = VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE);
+	return ret != NULL;
+}
+
+b32 plat_mem_decommit(void *ptr, u64 size)
+{
+	return VirtualFree(ptr, size, MEM_DECOMMIT);
+}
+
+b32 plat_mem_release(void *ptr, u64 size)
+{
+	return VirtualFree(ptr, size, MEM_RELEASE);
+}
+
+#elif defined(__linux__)
+
+#include <unistd.h>
+#include <sys/mman.h>
 
 u32 get_pagesize(void)
 {
@@ -141,20 +174,20 @@ u32 get_pagesize(void)
 
 void *mem_reserve(u64 size)
 {
-	void* out = mmap(NULL, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	void *out = mmap(NULL, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (out == MAP_FAILED)
 		return NULL;
 	
 	return out;
 }
 
-b32 mem_commit(void* ptr, u64 size)
+b32 mem_commit(void *ptr, u64 size)
 {
 	s32 ret = mprotect(ptr, size, PROT_READ | PROT_WRITE);
 	return ret == 0;
 }
 
-b32 mem_decommit(void* ptr, u64 size)
+b32 mem_decommit(void *ptr, u64 size)
 {
 	s32 ret = mprotect(ptr, size, PROT_NONE);
 	if (ret != 0) return false;
@@ -162,7 +195,7 @@ b32 mem_decommit(void* ptr, u64 size)
 	return ret == 0;
 }
 
-b32 mem_release(void* ptr, u64 size)
+b32 mem_release(void *ptr, u64 size)
 {
 	s32 ret = munmap(ptr, size);
 	return ret == 0;
