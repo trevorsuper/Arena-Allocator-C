@@ -1,4 +1,4 @@
-cc = gcc
+cc = clang
 
 src_dir = src
 debug_objects_dir = dbg
@@ -22,12 +22,12 @@ thread_dependencies = $(patsubst $(src_dir)/%.c,$(thread_objects_dir)/%.d,$(src)
 opt_objects         = $(patsubst $(src_dir)/%.c,$(opt_objects_dir)/%.o,$(src))
 opt_dependencies    = $(patsubst $(src_dir)/%.c,$(opt_objects_dir)/%.o,$(src))
 
-debug_flags = -Wall -Wextra -Werror -Wpedantic -O0 -g -MMD -MP -std=c17
-debug_uba_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=undefined,address -march=native -MMD -MP -std=c17
-debug_point_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=address,pointer-compare -MMD -MP -std=c17
-debug_leak_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=leak -march=native -MMD -MP -std=c17
-debug_thread_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=thread -march=native -MMD -MP -std=c17
-optimized_flags = -Wall -Wextra -Werror -Wpedantic -fPIE -O2 -march=native -MMD -MP -std=c17
+debug_flags = -Wall -Wextra -Werror -Wpedantic -O0 -g -MMD -MP -std=c23
+debug_uba_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=undefined,address -march=native -MMD -MP -std=c23
+debug_point_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=address,pointer-compare -MMD -MP -std=c23
+debug_leak_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=leak -march=native -MMD -MP -std=c23
+debug_thread_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=thread -march=native -MMD -MP -std=c23
+optimized_flags = -Wall -Wextra -Werror -Wpedantic -fPIE -O2 -march=native -MMD -MP -std=c23
 
 target = arena_alloc
 debug_target = $(target)_dbg
@@ -106,4 +106,3 @@ $(opt_objects_dir)/%.o: $(src_dir)/%.c
 clean:
 	rm -rf $(debug_objects_dir) $(uba_objects_dir) $(point_objects_dir) $(leak_objects_dir) $(thread_objects_dir) $(opt_objects_dir) \
 	$(debug_target) $(uba_target) $(point_target) $(leak_target) $(thread_target) $(opt_target)
-
