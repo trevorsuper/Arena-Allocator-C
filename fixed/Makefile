@@ -29,13 +29,15 @@ debug_leak_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=leak -march=n
 debug_thread_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=thread -march=native -MMD -MP -std=c23
 optimized_flags = -Wall -Wextra -Werror -Wpedantic -fPIE -O2 -march=native -MMD -MP -std=c23
 
-target = arena_alloc
-debug_target = $(target)_dbg
-uba_target = $(target)_uba
-point_target = $(target)_point
-leak_target = $(target)_leak
-thread_target = $(target)_thread
+target = prg
+debug_target = $(target)-dbg
+uba_target = $(target)-uba
+point_target = $(target)-point
+leak_target = $(target)-leak
+thread_target = $(target)-thread
 opt_target = $(target)
+
+.PHONY = debug uba point leak thread opt clean
 
 debug: $(debug_target)
 	./$<
@@ -46,7 +48,6 @@ $(debug_target): $(debug_objects)
 $(debug_objects_dir)/%.o: $(src_dir)/%.c
 	@mkdir -p $(debug_objects_dir)
 	$(cc) $(debug_flags) -c $< -o $@
-	-include $(debug_dependencies)
 
 uba: $(uba_target)
 	./$<
@@ -57,7 +58,6 @@ $(uba_target): $(uba_objects)
 $(uba_objects_dir)/%.o: $(src_dir)/%.c
 	@mkdir -p $(uba_objects_dir)
 	$(cc) $(debug_uba_flags) -c $< -o $@
-	-include $(uba_dependencies)
 
 point: $(point_target)
 	./$<
@@ -68,7 +68,6 @@ $(point_target): $(point_objects)
 $(point_objects_dir)/%.o: $(src_dir)/%.c
 	@mkdir -p $(point_objects_dir)
 	$(cc) $(debug_point_flags) -c $< -o $@
-	-include $(point_dependencies)
 
 leak: $(leak_target)
 	./$<
@@ -79,7 +78,6 @@ $(leak_target): $(leak_objects)
 $(leak_objects_dir)/%.o: $(src_dir)/%.c
 	@mkdir -p $(leak_objects_dir)
 	$(cc) $(debug_leak_flags) -c $< -o $@
-	-include $(leak_dependencies)
 
 thread: $(thread_target)
 	./$<
@@ -90,7 +88,6 @@ $(thread_target): $(thread_objects)
 $(thread_objects_dir)/%.o: $(src_dir)/%.c
 	@mkdir -p $(thread_objects_dir)
 	$(cc) $(debug_thread_flags) -c $< -o $@
-	-include $(thread_dependencies)
 
 opt: $(opt_target)
 	./$<
@@ -101,8 +98,14 @@ $(opt_target): $(opt_objects)
 $(opt_objects_dir)/%.o: $(src_dir)/%.c
 	@mkdir -p $(opt_objects_dir)
 	$(cc) $(optimized_flags) -c $< -o $@
-	-include $(opt_dependencies)
 
 clean:
 	rm -rf $(debug_objects_dir) $(uba_objects_dir) $(point_objects_dir) $(leak_objects_dir) $(thread_objects_dir) $(opt_objects_dir) \
 	$(debug_target) $(uba_target) $(point_target) $(leak_target) $(thread_target) $(opt_target)
+
+-include $(debug_dependencies)
+-include $(uba_dependencies)
+-include $(point_dependencies)
+-include $(leak_dependencies)
+-include $(thread_dependencies)
+-include $(opt_dependencies)
