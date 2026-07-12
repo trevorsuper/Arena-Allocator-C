@@ -20,7 +20,7 @@ leak_dependencies   = $(patsubst $(src_dir)/%.c,$(leak_objects_dir)/%.d,$(src))
 thread_objects      = $(patsubst $(src_dir)/%.c,$(thread_objects_dir)/%.o,$(src))
 thread_dependencies = $(patsubst $(src_dir)/%.c,$(thread_objects_dir)/%.d,$(src))
 opt_objects         = $(patsubst $(src_dir)/%.c,$(opt_objects_dir)/%.o,$(src))
-opt_dependencies    = $(patsubst $(src_dir)/%.c,$(opt_objects_dir)/%.o,$(src))
+opt_dependencies    = $(patsubst $(src_dir)/%.c,$(opt_objects_dir)/%.d,$(src))
 
 debug_flags = -Wall -Wextra -Werror -Wpedantic -O0 -g -MMD -MP -std=c23
 debug_uba_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=undefined,address -march=native -MMD -MP -std=c23
