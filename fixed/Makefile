@@ -1,111 +1,89 @@
-cc = clang
+CC 				= clang
+TARGET_ARCH 	?=
+SYSROOT 		?=
+CROSS_FLAGS 	?=
+LDFLAGS 		?=
 
-src_dir = src
-debug_objects_dir = dbg
-uba_objects_dir = uba
-point_objects_dir = point
-leak_objects_dir = leak
-thread_objects_dir = thread
-opt_objects_dir = opt
+ifneq ($(TARGET_ARCH),)
+	CROSS_FLAGS += -target $(TARGET_ARCH)
+	LDFLAGS		+= -target $(TARGET_ARCH) -fuse-ld=lld
+endif
 
-src = $(wildcard $(src_dir)/*.c)
-debug_objects       = $(patsubst $(src_dir)/%.c,$(debug_objects_dir)/%.o,$(src))
-debug_dependencies  = $(patsubst $(src_dir)/%.c,$(debug_objects_dir)/%.d,$(src))
-uba_objects         = $(patsubst $(src_dir)/%.c,$(uba_objects_dir)/%.o,$(src))
-uba_dependencies    = $(patsubst $(src_dir)/%.c,$(uba_objects_dir)/%.d,$(src))
-point_objects       = $(patsubst $(src_dir)/%.c,$(point_objects_dir)/%.o,$(src))
-point_dependencies  = $(patsubst $(src_dir)/%.c,$(point_objects_dir)/%.d,$(src))
-leak_objects        = $(patsubst $(src_dir)/%.c,$(leak_objects_dir)/%.o,$(src))
-leak_dependencies   = $(patsubst $(src_dir)/%.c,$(leak_objects_dir)/%.d,$(src))
-thread_objects      = $(patsubst $(src_dir)/%.c,$(thread_objects_dir)/%.o,$(src))
-thread_dependencies = $(patsubst $(src_dir)/%.c,$(thread_objects_dir)/%.d,$(src))
-opt_objects         = $(patsubst $(src_dir)/%.c,$(opt_objects_dir)/%.o,$(src))
-opt_dependencies    = $(patsubst $(src_dir)/%.c,$(opt_objects_dir)/%.d,$(src))
+ifneq ($(SYSROOT),)
+	CROSS_FLAGS += --sysroot=$(SYSROOT)
+	LDFLAGS	+= --sysroot=$(SYSROOT)
+endif
 
-debug_flags = -Wall -Wextra -Werror -Wpedantic -O0 -g -MMD -MP -std=c23
-debug_uba_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=undefined,address -march=native -MMD -MP -std=c23
-debug_point_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=address,pointer-compare -MMD -MP -std=c23
-debug_leak_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=leak -march=native -MMD -MP -std=c23
-debug_thread_flags = -Wall -Wextra -Werror -Wpedantic -O0 -fsanitize=thread -march=native -MMD -MP -std=c23
-optimized_flags = -Wall -Wextra -Werror -Wpedantic -fPIE -O2 -march=native -MMD -MP -std=c23
+SRC_DIR = src
+TARGET_BASE = prg
+SRC = $(wildcard $(SRC_DIR)/*.c)
 
-target = prg
-debug_target = $(target)-dbg
-uba_target = $(target)-uba
-point_target = $(target)-point
-leak_target = $(target)-leak
-thread_target = $(target)-thread
-opt_target = $(target)
+# Build Configurations
+CONFIGS = debug uba point leak thread opt
 
-.PHONY = debug uba point leak thread opt clean
+COMMON_FLAGS = -Wall -Wextra -Werror -Wpedantic -MMD -MP -std=c23 $(CROSS_FLAGS)
 
-debug: $(debug_target)
-	./$<
+debug_dir 		= dbg
+debug_suffix 	= -dbg
+debug_cflags 	= $(COMMON_FLAGS) -O0 -g
+debug_ldflags 	= 
 
-$(debug_target): $(debug_objects)
-	$(cc) -o $@ $^
+uba_dir 		= uba
+uba_suffix 		= -uba
+uba_cflags 		= $(COMMON_FLAGS) -O0 -fsanitize=undefined,address
+uba_ldflags 	= -fsanitize=undefined,address
 
-$(debug_objects_dir)/%.o: $(src_dir)/%.c
-	@mkdir -p $(debug_objects_dir)
-	$(cc) $(debug_flags) -c $< -o $@
+point_dir 		= point
+point_suffix 	= -point
+point_cflags 	= $(COMMON_FLAGS) -O0 -fsanitize=address,pointer-compare
+point_ldflags 	= -fsanitize=address,pointer-compare
 
-uba: $(uba_target)
-	./$<
+leak_dir 		= leak
+leak_suffix 	= -leak
+leak_cflags 	= $(COMMON_FLAGS) -O0 -fsanitize=leak
+leak_ldflags 	= -fsanitize=leak
 
-$(uba_target): $(uba_objects)
-	$(cc) -o $@ $^ -fsanitize=undefined,address
+thread_dir 		= thread
+thread_suffix 	= -thread
+thread_cflags 	= $(COMMON_FLAGS) -O0 -fsanitize=thread
+thread_ldflags 	= -fsanitize=thread
 
-$(uba_objects_dir)/%.o: $(src_dir)/%.c
-	@mkdir -p $(uba_objects_dir)
-	$(cc) $(debug_uba_flags) -c $< -o $@
+opt_dir 		= opt
+opt_suffix 		= 
+opt_cflags 		= $(COMMON_FLAGS) -fPIE -O2
+opt_ldflags 	= 
 
-point: $(point_target)
-	./$<
+define run_binary
+	$(if $(TARGET_ARCH), @echo "Cross-compiled binary created. Skipping execution.",./$<)
+endef
 
-$(point_target): $(point_objects)
-	$(cc) -o $@ $^ -fsanitize=address,pointer-compare
+.PHONY: $(CONFIGS) all clean
 
-$(point_objects_dir)/%.o: $(src_dir)/%.c
-	@mkdir -p $(point_objects_dir)
-	$(cc) $(debug_point_flags) -c $< -o $@
+define CONFIG_template
 
-leak: $(leak_target)
-	./$<
+objs_$(1)		:= $$(patsubst $$(SRC_DIR)/%.cpp,$$($(1)_dir)/%.o,$$(SRC))
+deps_$(1)		:= $$(objs_$(1):.o=.d)
+target_$(1)		:= $$(TARGET_BASE)$$($(1)_suffix)
 
-$(leak_target): $(leak_objects)
-	$(cc) -o $@ $^ -fsanitize=leak
+$(1): $$(target_$(1))
+	$$(call run_binary)
 
-$(leak_objects_dir)/%.o: $(src_dir)/%.c
-	@mkdir -p $(leak_objects_dir)
-	$(cc) $(debug_leak_flags) -c $< -o $@
+$$(target_$(1)): $$(objs_$(1))
+	$$(CC) $$(LDFLAGS) -o $$@ $$^ $$($(1)_ldflags)
 
-thread: $(thread_target)
-	./$<
+$$($(1)_dir)/%.o: $$(SRC_DIR)/%.cpp
+	@mkdir -p $$(@D)
+	$$(CC) $$($(1)_cflags) -c $$< -o $$@
 
-$(thread_target): $(thread_objects)
-	$(cc) -o $@ $^ -fsanitize=thread
+ALL_DIRS    := $(ALL_DIRS) $$($(1)_dir)
+ALL_TARGETS := $(ALL_TARGETS) $$(target_$(1))
 
-$(thread_objects_dir)/%.o: $(src_dir)/%.c
-	@mkdir -p $(thread_objects_dir)
-	$(cc) $(debug_thread_flags) -c $< -o $@
+-include $$(deps_$(1))
+endef
 
-opt: $(opt_target)
-	./$<
+$(foreach config,$(CONFIGS),$(eval $(call CONFIG_template,$(config))))
 
-$(opt_target): $(opt_objects)
-	$(cc) -o $@ $^
-
-$(opt_objects_dir)/%.o: $(src_dir)/%.c
-	@mkdir -p $(opt_objects_dir)
-	$(cc) $(optimized_flags) -c $< -o $@
+all: $(CONFIGS)
 
 clean:
-	rm -rf $(debug_objects_dir) $(uba_objects_dir) $(point_objects_dir) $(leak_objects_dir) $(thread_objects_dir) $(opt_objects_dir) \
-	$(debug_target) $(uba_target) $(point_target) $(leak_target) $(thread_target) $(opt_target)
-
--include $(debug_dependencies)
--include $(uba_dependencies)
--include $(point_dependencies)
--include $(leak_dependencies)
--include $(thread_dependencies)
--include $(opt_dependencies)
+	rm -rf $(ALL_DIRS) $(ALL_TARGETS)
