@@ -61,7 +61,7 @@ endef
 
 define CONFIG_template
 
-objs_$(1)		:= $$(patsubst $$(SRC_DIR)/%.cpp,$$($(1)_dir)/%.o,$$(SRC))
+objs_$(1)		:= $$(patsubst $$(SRC_DIR)/%.c,$$($(1)_dir)/%.o,$$(SRC))
 deps_$(1)		:= $$(objs_$(1):.o=.d)
 target_$(1)		:= $$(TARGET_BASE)$$($(1)_suffix)
 
@@ -71,7 +71,7 @@ $(1): $$(target_$(1))
 $$(target_$(1)): $$(objs_$(1))
 	$$(CC) $$(LDFLAGS) -o $$@ $$^ $$($(1)_ldflags)
 
-$$($(1)_dir)/%.o: $$(SRC_DIR)/%.cpp
+$$($(1)_dir)/%.o: $$(SRC_DIR)/%.c
 	@mkdir -p $$(@D)
 	$$(CC) $$($(1)_cflags) -c $$< -o $$@
 
