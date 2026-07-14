@@ -48,6 +48,8 @@ void arena_clear(fixed_arena *arena);
 fixed_arena *arena_create(u64 capacity)
 {
 	fixed_arena *arena = (fixed_arena*)malloc(capacity);
+	if (arena == NULL)
+		return NULL;
 	arena->capacity = capacity;
 	arena->position = ARENA_BASE_POS;
 	return arena;
