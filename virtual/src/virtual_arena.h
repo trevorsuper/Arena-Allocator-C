@@ -131,7 +131,7 @@ void arena_clear(virtual_arena *arena)
 
 #include <windows.h>
 
-u32 plat_get_pagesize(void)
+u32 get_pagesize(void)
 {
 	SYSTEM_INFO sysinfo = { 0 };
 	GetSystemInfo(&sysinfo);
@@ -149,12 +149,12 @@ bool mem_commit(void *ptr, u64 size)
 	return ret != NULL;
 }
 
-bool plat_mem_decommit(void *ptr, u64 size)
+bool mem_decommit(void *ptr, u64 size)
 {
 	return VirtualFree(ptr, size, MEM_DECOMMIT);
 }
 
-bool plat_mem_release(void *ptr, u64 size)
+bool mem_release(void *ptr, u64 size)
 {
 	return VirtualFree(ptr, size, MEM_RELEASE);
 }
