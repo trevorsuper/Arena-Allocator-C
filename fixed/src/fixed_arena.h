@@ -94,8 +94,9 @@ void arena_pop_to(fixed_arena *arena, u64 position)
 		position = ARENA_BASE_POS;
 	}
 	
-	u64 size = position < arena->position ? arena->position - position : 0;
-	arena_pop(arena, size);
+	if (position < arena->position) {
+		arena_pop(arena, arena->position - position);
+	}
 }
 
 void arena_clear(fixed_arena *arena)
