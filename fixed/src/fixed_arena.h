@@ -49,8 +49,9 @@ fixed_arena *arena_create(u64 capacity)
 {
 	u64 total_allocation = capacity + ARENA_BASE_POS;
 	fixed_arena *arena = (fixed_arena*)malloc(total_allocation);
-	if (arena == NULL)
+	if (arena == NULL) {
 		return NULL;
+	}
 	arena->capacity = total_allocation;
 	arena->position = ARENA_BASE_POS;
 	return arena;
@@ -89,10 +90,13 @@ void arena_pop(fixed_arena *arena, u64 size)
 
 void arena_pop_to(fixed_arena *arena, u64 position)
 {
+	if (position < ARENA_BASE_POS) {
+		position = ARENA_BASE_POS;
+	}
+	
 	u64 size = position < arena->position ? arena->position - position : 0;
 	arena_pop(arena, size);
 }
-
 
 void arena_clear(fixed_arena *arena)
 {
